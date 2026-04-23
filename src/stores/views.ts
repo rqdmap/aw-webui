@@ -13,6 +13,62 @@ export interface View {
   elements: IElement[];
 }
 
+const LLM_SUMMARY_ELEMENTS: IElement[] = [
+  { type: 'llm_tokens', size: 3 },
+  { type: 'llm_sources', size: 3 },
+  { type: 'llm_models', size: 3 },
+  { type: 'llm_sessions', size: 3 },
+  { type: 'llm_projects', size: 3 },
+  { type: 'llm_barchart', size: 3 },
+  { type: 'llm_concurrency', size: 3 },
+  { type: 'llm_timeline', size: 3 },
+];
+const LLM_ELEMENT_TYPES = new Set([
+  ...LLM_SUMMARY_ELEMENTS.map(element => element.type),
+  'llm_activity',
+]);
+
+function ensureSummaryHasLLM(views: View[] = []): View[] {
+  return views.map(view => {
+    let elements = [...view.elements];
+
+    if (elements.some(element => element.type === 'llm_activity')) {
+      elements = elements.flatMap(element => {
+        if (element.type !== 'llm_activity') return [{ ...element }];
+        if (view.id === 'summary') {
+          return LLM_SUMMARY_ELEMENTS.map(llmElement => ({ ...llmElement }));
+        }
+        return [{ type: 'llm_timeline', size: element.size, props: element.props }];
+      });
+    } else {
+      elements = elements.map(element => ({ ...element }));
+    }
+
+    if (view.id !== 'summary') {
+      return { ...view, elements };
+    }
+
+    const presentTypes = new Set(elements.map(element => element.type));
+    const missingElements = LLM_SUMMARY_ELEMENTS.filter(element => !presentTypes.has(element.type));
+
+    if (!missingElements.length) {
+      return { ...view, elements };
+    }
+
+    let insertIndex = elements.reduce(
+      (index, element, currentIndex) =>
+        LLM_ELEMENT_TYPES.has(element.type) ? currentIndex + 1 : index,
+      -1
+    );
+    if (insertIndex < 0) {
+      const timelineIndex = elements.findIndex(element => element.type === 'timeline_barchart');
+      insertIndex = timelineIndex >= 0 ? timelineIndex + 1 : elements.length;
+    }
+    elements.splice(insertIndex, 0, ...missingElements.map(element => ({ ...element })));
+    return { ...view, elements };
+  });
+}
+
 const desktopViews: View[] = [
   {
     id: 'summary',
@@ -21,6 +77,14 @@ const desktopViews: View[] = [
       { type: 'top_apps', size: 3 },
       { type: 'top_titles', size: 3 },
       { type: 'timeline_barchart', size: 3 },
+      { type: 'llm_tokens', size: 3 },
+      { type: 'llm_sources', size: 3 },
+      { type: 'llm_models', size: 3 },
+      { type: 'llm_sessions', size: 3 },
+      { type: 'llm_projects', size: 3 },
+      { type: 'llm_barchart', size: 3 },
+      { type: 'llm_concurrency', size: 3 },
+      { type: 'llm_timeline', size: 3 },
       { type: 'top_categories', size: 3 },
       { type: 'category_tree', size: 3 },
       { type: 'category_sunburst', size: 3 },
@@ -62,6 +126,14 @@ const androidViews = [
       { type: 'top_apps', size: 3 },
       { type: 'top_categories', size: 3 },
       { type: 'timeline_barchart', size: 3 },
+      { type: 'llm_tokens', size: 3 },
+      { type: 'llm_sources', size: 3 },
+      { type: 'llm_models', size: 3 },
+      { type: 'llm_sessions', size: 3 },
+      { type: 'llm_projects', size: 3 },
+      { type: 'llm_barchart', size: 3 },
+      { type: 'llm_concurrency', size: 3 },
+      { type: 'llm_timeline', size: 3 },
       { type: 'category_tree', size: 3 },
       { type: 'category_sunburst', size: 3 },
     ],
@@ -86,7 +158,8 @@ export const useViewsStore = defineStore('views', {
     async load() {
       const settingsStore = useSettingsStore();
       await settingsStore.ensureLoaded();
-      const views = settingsStore.views;
+      const views =
+        settingsStore.views && settingsStore.views.length ? settingsStore.views : defaultViews;
       this.loadViews(views);
     },
     async save() {
@@ -95,7 +168,7 @@ export const useViewsStore = defineStore('views', {
       await this.load();
     },
     loadViews(views: View[]) {
-      this.$patch({ views });
+      this.$patch({ views: ensureSummaryHasLLM(views) });
       console.log('Loaded views:', this.views);
     },
     clearViews(this: State) {
@@ -105,7 +178,7 @@ export const useViewsStore = defineStore('views', {
       this.views.find(v => v.id == view_id).elements = elements;
     },
     restoreDefaults(this: State) {
-      this.views = defaultViews;
+      this.views = ensureSummaryHasLLM(defaultViews);
     },
     addView(this: State, view: View) {
       this.views.push({ ...view, elements: [] });

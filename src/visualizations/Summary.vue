@@ -35,6 +35,10 @@ export default {
       default: null, // If not set we will default to namefunc
     },
     colorfunc: Function,
+    valuefunc: {
+      type: Function,
+      default: null,
+    },
     linkfunc: {
       type: Function,
       default: () => null,
@@ -79,7 +83,8 @@ export default {
           this.namefunc,
           this.hoverfunc,
           this.colorfunc,
-          this.linkfunc
+          this.linkfunc,
+          this.valuefunc
         );
       } else {
         summary.set_status(el, 'Loading...');

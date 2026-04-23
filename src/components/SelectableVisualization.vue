@@ -97,6 +97,24 @@ div
         :initialCustomField="props ? props.customField : ''",
         @update-props="onWatcherPropsChange"
       )
+    div(v-if="type == 'llm_tokens' && has_prerequisites")
+      aw-llm-summary-panel(mode="tokens")
+    div(v-if="type == 'llm_sources' && has_prerequisites")
+      aw-llm-summary-panel(mode="sources")
+    div(v-if="type == 'llm_models' && has_prerequisites")
+      aw-llm-summary-panel(mode="models")
+    div(v-if="type == 'llm_sessions' && has_prerequisites")
+      aw-llm-summary-panel(mode="sessions")
+    div(v-if="type == 'llm_projects' && has_prerequisites")
+      aw-llm-summary-panel(mode="projects")
+    div(v-if="type == 'llm_barchart' && has_prerequisites")
+      aw-llm-summary-panel(mode="barchart")
+    div(v-if="type == 'llm_concurrency' && has_prerequisites")
+      aw-llm-summary-panel(mode="concurrency")
+    div(v-if="type == 'llm_timeline' && has_prerequisites")
+      aw-llm-summary-panel(mode="timeline")
+    div(v-if="type == 'llm_activity' && has_prerequisites")
+      aw-llm-summary-panel(mode="timeline")
 </template>
 
 <style lang="scss">
@@ -126,6 +144,7 @@ import { useActivityStore } from '~/stores/activity';
 import { useCategoryStore } from '~/stores/categories';
 import { useBucketsStore } from '~/stores/buckets';
 import { useViewsStore } from '~/stores/views';
+import { hasLLMBuckets } from '~/util/llm';
 
 import moment from 'moment';
 
@@ -148,6 +167,7 @@ export default {
     return {
       activityStore: useActivityStore(),
       categoryStore: useCategoryStore(),
+      bucketsStore: useBucketsStore(),
 
       types: [
         'top_apps',
@@ -168,6 +188,14 @@ export default {
         'score',
         'top_stopwatches',
         'top_bucket_data',
+        'llm_tokens',
+        'llm_sources',
+        'llm_models',
+        'llm_sessions',
+        'llm_projects',
+        'llm_barchart',
+        'llm_concurrency',
+        'llm_timeline',
       ],
       // TODO: Move this function somewhere else
       top_editor_files_namefunc: e => {
@@ -191,6 +219,9 @@ export default {
     };
   },
   computed: {
+    hasLlmBuckets() {
+      return hasLLMBuckets(this.bucketsStore.buckets, this.activityStore.query_options?.host || '');
+    },
     visualizations: function () {
       return {
         top_apps: {
@@ -264,6 +295,42 @@ export default {
         top_bucket_data: {
           title: 'Top Bucket Data',
           available: true,
+        },
+        llm_tokens: {
+          title: 'LLM Tokens',
+          available: this.hasLlmBuckets,
+        },
+        llm_sources: {
+          title: 'LLM Sources',
+          available: this.hasLlmBuckets,
+        },
+        llm_models: {
+          title: 'LLM Models',
+          available: this.hasLlmBuckets,
+        },
+        llm_sessions: {
+          title: 'LLM Session Time',
+          available: this.hasLlmBuckets,
+        },
+        llm_projects: {
+          title: 'LLM Projects',
+          available: this.hasLlmBuckets,
+        },
+        llm_barchart: {
+          title: 'LLM Rhythm',
+          available: this.hasLlmBuckets,
+        },
+        llm_concurrency: {
+          title: 'LLM Concurrency',
+          available: this.hasLlmBuckets,
+        },
+        llm_timeline: {
+          title: 'LLM Timeline',
+          available: this.hasLlmBuckets,
+        },
+        llm_activity: {
+          title: 'LLM Activity',
+          available: this.hasLlmBuckets,
         },
       };
     },

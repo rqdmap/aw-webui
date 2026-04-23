@@ -40,6 +40,7 @@ interface Entry {
   name: string;
   hovertext: string;
   duration: number;
+  valueText?: string;
   color?: string;
   colorKey?: string | string[];
   link?: string;
@@ -82,6 +83,8 @@ function update(container: HTMLElement, apps: Entry[]) {
 
     const hovercolor = Color(appcolor).darken(0.1).hex();
 
+    const valueText = app.valueText || seconds_to_duration(app.duration);
+
     // Add a parent <a> element if link is set
     const a = app.link ? svg.append('a').attr('href', app.link) : svg;
 
@@ -95,7 +98,7 @@ function update(container: HTMLElement, apps: Entry[]) {
         eg.select('rect').style('fill', appcolor);
       });
 
-    eg.append('title').text(app.hovertext + '\n' + seconds_to_duration(app.duration));
+    eg.append('title').text(app.hovertext + '\n' + valueText);
 
     // Color box background
     eg.append('rect')
@@ -120,7 +123,7 @@ function update(container: HTMLElement, apps: Entry[]) {
     eg.append('text')
       .attr('x', 5)
       .attr('y', curr_y + 2.6 * textSize)
-      .text(seconds_to_duration(app.duration))
+      .text(valueText)
       .attr('font-family', 'sans-serif')
       .attr('font-size', textSize - 3 + 'px')
       .attr('fill', '#444');
@@ -140,7 +143,8 @@ function updateSummedEvents(
   titleKeyFunc: (event: IEvent) => string,
   hoverKeyFunc: (event: IEvent) => string,
   colorKeyFunc: (event: IEvent) => string,
-  linkKeyFunc: (event: IEvent) => string = () => null
+  linkKeyFunc: (event: IEvent) => string = () => null,
+  valueKeyFunc: (event: IEvent) => string = null
 ) {
   if (hoverKeyFunc == null) {
     hoverKeyFunc = titleKeyFunc;
@@ -150,6 +154,7 @@ function updateSummedEvents(
       name: titleKeyFunc(e),
       hovertext: hoverKeyFunc(e),
       duration: e.duration,
+      valueText: valueKeyFunc ? valueKeyFunc(e) : undefined,
       color: e.data['$color'],
       colorKey: colorKeyFunc(e),
       link: linkKeyFunc(e),
